@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pomodoro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-mode="focus">
+  <main class="app">
+
+    <section class="timer" aria-labelledby="timer-title">
+      <h1 id="timer-title">Pomodoro</h1>
+
+      <div class="modes" role="group" aria-label="Tipo de sessão">
+        <button class="mode" data-mode="focus" aria-pressed="true">Foco</button>
+        <button class="mode" data-mode="short" aria-pressed="false">Pausa curta</button>
+        <button class="mode" data-mode="long" aria-pressed="false">Pausa longa</button>
+      </div>
+
+      <div class="ring-wrap">
+        <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="ring-track" cx="60" cy="60" r="54"></circle>
+          <circle class="ring-progress" id="ring" cx="60" cy="60" r="54"></circle>
+        </svg>
+        <div class="readout">
+          <div id="time" class="time" role="timer">25:00</div>
+          <div id="label" class="label">Hora de focar</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="start" class="btn primary">Iniciar</button>
+        <button id="reset" class="btn">Reiniciar</button>
+      </div>
+      <p id="cycle" class="cycle"></p>
+    </section>
+
+    <section class="stats" aria-labelledby="stats-title">
+      <h2 id="stats-title">Seu progresso</h2>
+
+      <dl class="stat-grid">
+        <div class="stat">
+          <dt>Hoje</dt>
+          <dd id="stat-today">0 min</dd>
+          <dd id="stat-today-sessions" class="note">0 sessões</dd>
+        </div>
+        <div class="stat">
+          <dt>Sequência</dt>
+          <dd id="stat-streak">0 dias</dd>
+          <dd class="note">dias seguidos com foco</dd>
+        </div>
+        <div class="stat">
+          <dt>Total</dt>
+          <dd id="stat-total">0 min</dd>
+          <dd id="stat-total-sessions" class="note">0 sessões</dd>
+        </div>
+      </dl>
+
+      <h3>Últimos 7 dias (minutos de foco)</h3>
+      <div id="chart" class="chart"></div>
+
+      <p class="footnote">Só sessões de foco concluídas entram na conta. Os dados ficam salvos neste navegador.</p>
+      <button id="clear-stats" class="link-btn">Apagar estatísticas</button>
+    </section>
+
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
