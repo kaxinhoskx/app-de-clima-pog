@@ -2,6 +2,7 @@
 const form = document.getElementById("form");
 const inputCidade = document.getElementById("cidade");
 const btnUnidade = document.getElementById("unidade");
+const btnLocalizacao = document.getElementById("localizacao");
 const mensagem = document.getElementById("mensagem");
 const resultado = document.getElementById("resultado");
 const nome = document.getElementById("nome");
@@ -25,26 +26,29 @@ function traduzCodigo(codigo) {
   return "⛈️ Tempestade";
 }
 
-// 4. Busca os dados (async/await + fetch)
-async function buscarClima(cidade) {
-  // Passo 1: transforma o nome da cidade em latitude/longitude
-  const urlGeo = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cidade)}&count=1&language=pt`;
-  const respGeo = await fetch(urlGeo);
-  const geo = await respGeo.json();
+// 4. Passo 1: nome da cidade → coordenadas
+async function buscarCoordenadas(cidade) {
+  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cidade)}&count=1&language=pt`;
+  const resp = await fetch(url);
+  const geo = await resp.json();
 
   if (!geo.results) throw new Error("Cidade não encontrada.");
   const { latitude, longitude, name, country } = geo.results[0];
 
-  // Passo 2: busca o clima atual com as coordenadas
-  const urlClima = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code`;
-  const respClima = await fetch(urlClima);
-  if (!respClima.ok) throw new Error("Erro ao buscar o clima.");
-  const clima = await respClima.json();
-
-  return { cidade: `${name}, ${country}`, atual: clima.current };
+  return { latitude, longitude, nome: `${name}, ${country}` };
 }
 
-// 5. Mostra os dados na tela
+// 5. Passo 2: coordenadas → clima
+async function buscarClimaPorCoordenadas(latitude, longitude, nomeLocal) {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error("Erro ao buscar o clima.");
+  const clima = await resp.json();
+
+  return { cidade: nomeLocal, atual: clima.current };
+}
+
+// 6. Mostra os dados na tela
 function mostrar() {
   const c = dados.atual.temperature_2m;
   const valor = celsius ? c : (c * 9) / 5 + 32; // fórmula °C → °F
@@ -56,12 +60,13 @@ function mostrar() {
   resultado.hidden = false;
 }
 
-// 6. Eventos (reagem às ações do usuário)
+// 7. Evento: busca por nome da cidade
 form.addEventListener("submit", async (e) => {
   e.preventDefault();               // impede a página de recarregar
   mensagem.textContent = "Buscando...";
   try {
-    dados = await buscarClima(inputCidade.value.trim());
+    const local = await buscarCoordenadas(inputCidade.value.trim());
+    dados = await buscarClimaPorCoordenadas(local.latitude, local.longitude, local.nome);
     mensagem.textContent = "";
     mostrar();
   } catch (erro) {
@@ -70,8 +75,43 @@ form.addEventListener("submit", async (e) => {
   }
 });
 
+// 8. Evento: troca entre °C e °F
 btnUnidade.addEventListener("click", () => {
   celsius = !celsius;               // inverte true/false
   btnUnidade.textContent = celsius ? "Mostrar em °F" : "Mostrar em °C";
   if (dados) mostrar();
+});
+
+// 9. Evento: usar a localização do usuário
+btnLocalizacao.addEventListener("click", () => {
+  // Verifica se o navegador suporta geolocalização
+  if (!navigator.geolocation) {
+    mensagem.textContent = "Seu navegador não suporta geolocalização.";
+    return;
+  }
+
+  mensagem.textContent = "Obtendo sua localização...";
+
+  navigator.geolocation.getCurrentPosition(
+    // Callback de sucesso: o usuário permitiu
+    async (posicao) => {
+      try {
+        const { latitude, longitude } = posicao.coords;
+        dados = await buscarClimaPorCoordenadas(latitude, longitude, "📍 Sua localização");
+        mensagem.textContent = "";
+        mostrar();
+      } catch (erro) {
+        resultado.hidden = true;
+        mensagem.textContent = erro.message;
+      }
+    },
+    // Callback de erro: negou a permissão, GPS indisponível etc.
+    (erro) => {
+      resultado.hidden = true;
+      mensagem.textContent =
+        erro.code === erro.PERMISSION_DENIED
+          ? "Permissão de localização negada."
+          : "Não foi possível obter sua localização.";
+    }
+  );
 });
